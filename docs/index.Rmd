@@ -1051,6 +1051,7 @@ derivative_lsa_svi_int %>%
   ggtitle("SVI Scale up factor", subtitle = "per %")
 ```
 
+# Sugar-Sweetened Beverge Tax %
 ## PE Cordial
 ```{r PE Cordial der,echo=F, message=F, error=F, warning=F, fig.height=1*7*2, fig.width=1.5*2*2}
 derivative_lsa_ssb_int %>% 
@@ -1209,7 +1210,7 @@ derivative_lsa_ssb_int %>%
   ggtitle("Scale up factor", subtitle = "per 0.01 units")
 ```
 
-# Sugar-Sweetened Beverge Tax %
+## Sugar-Sweetened Beverge Tax %
 ```{r SB Tax percent der,echo=F, message=F, error=F, warning=F, fig.height=1*2*2, fig.width=1.5*2*2}
 derivative_lsa_ssb_int %>% 
   filter(grepl("SSB Tax", focus)) %>% 
