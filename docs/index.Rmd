@@ -918,7 +918,7 @@ derivative_lsa_svi_int %>%
   geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
   geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
   facet_grid(cols =vars(bmi.input), rows=vars(age.groups.input), scale="free")+
-  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
                    labels=c("3-5", "18-19", "40-44"))+
   scale_y_continuous(labels = label_scientific( scale =1,suffix = "%"))+
   # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
