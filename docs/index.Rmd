@@ -1,0 +1,1186 @@
+---
+title: "Supplementary Material - Senario assumptions"
+author: "Simon Chiu"
+date: "`r Sys.Date()`"
+output:
+  rmdformats::robobook:
+    highlight: kate
+  html_document:
+    df_print: paged
+  pdf_document: default
+  editor_options:
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(echo = TRUE)
+rm(list=ls())
+gc()
+
+library(progress)
+library(tidyverse)
+library(openxlsx)
+library(ggplot2)
+library(patchwork)
+library(ggh4x)
+library(ggpubr)
+library(ggbrace)
+library(scales)
+
+# devtools::install_github("nicolash2/ggbrace")
+
+focus_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/focus_df_2023-07-18.RDS")
+sensitivity_ran_variables<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/sensitivity_ran_variables_2023-07-17.RDS")
+det_bmi_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/det_bmi_df_2023-07-16.RDS") %>%
+  rename("bmi.output"="bmi", "age.groups.output"="age.groups", "gender.output"="gender")
+det_bmi_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/det_bmi_df_2023-07-16.RDS") %>%
+  rename("bmi.output"="bmi", "age.groups.output"="age.groups", "gender.output"="gender")
+load("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_seq_sample_2023-07-16.RData")
+lsa_bmi_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_bmi_df_2023-07-18.RDS")
+
+lsa.sensivity.seq.sample<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_sensivity_seq_sample_2023-07-17.RDS")
+
+
+focus_df_epoch<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/focus_df_epoch_2023-07-16.RDS")
+focus_df_cci<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/focus_df_cci_2023-07-16.RDS")
+focus_df_si<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/focus_df_si_2023-07-16.RDS")
+focus_df_svi<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/focus_df_svi_2023-07-16.RDS")
+focus_df_ssb<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/focus_df_ssb_2023-07-16.RDS")
+
+lsa_int_epoch_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_int_epoch_df_2023-07-30.RDS")
+lsa_int_cci_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_int_cci_df_2023-07-30.RDS")
+lsa_int_si_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_int_si_df_2023-07-30.RDS")
+lsa_int_svi_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_int_svi_df_2023-08-01.RDS")
+lsa_int_ssb_df<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/lsa_int_ssb_df_2023-07-30.RDS")
+
+derivative_lsa_epoch_int<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/derivative_lsa_epoch_int_2023-07-31.RDS")
+derivative_lsa_cci_int<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/derivative_lsa_cci_int_2023-07-31.RDS")
+derivative_lsa_si_int<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/derivative_lsa_si_int_2023-07-31.RDS")
+derivative_lsa_svi_int<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/derivative_lsa_svi_int_2023-08-01.RDS")
+derivative_lsa_ssb_int<-readRDS("/media/simon/ExtSSD/Documents/PhD/4 SD Model/7 Sensitivity/Data/R/derivative_lsa_ssb_int_2023-07-31.RDS")
+
+det_bmi_df_wide<-det_bmi_df %>% 
+  filter(scenario!="Base model") %>% 
+  rename('det.int.value'='2057') %>% 
+  select("scenario" ,"run","bmi.output","age.groups.output","gender.output", "det.int.value") %>% 
+  left_join(., det_bmi_df %>% 
+              filter(scenario=="Base model") %>% 
+              rename('det.base.model.value'='2057') %>% 
+              select("bmi.output","age.groups.output","gender.output", "det.base.model.value"),
+            by=c("bmi.output","age.groups.output","gender.output"))
+
+lsa_int_epoch_df<-lsa_int_epoch_df %>% 
+  mutate(scenario=factor(case_when(scenario == "1 EPOCH"~1,
+                                 scenario == "2 CCI"~2,
+                                 scenario == "3 SI"~3,
+                                 scenario == "4 SVI"~4,
+                                 scenario == "5 SSB"~5,
+                                 scenario == "6 EPOCH CCI"~6,
+                                 scenario == "7 SI SVI"~7,
+                                 scenario == "8 EPOCH CCI SI SVI"~8,
+                                 scenario == "9 EPOCH CCI SI SVI SSB"~9),
+                       levels=c(1:9),
+                       labels = c("EPOCH", "CCI", "SI", "SVI", "SSB", "EPOCH+CCI",
+                                  "SI+SVI",  "EPOCH+CCI+SI+SVI", "EPOCH+CCI+SI+SVI+SSB"))) %>% 
+left_join(., det_bmi_df_wide %>% select(-run),
+          by=c("scenario","bmi.output","age.groups.output","gender.output"))
+
+lsa_int_cci_df<-lsa_int_cci_df %>% 
+  mutate(scenario=factor(case_when(scenario == "1 EPOCH"~1,
+                                 scenario == "2 CCI"~2,
+                                 scenario == "3 SI"~3,
+                                 scenario == "4 SVI"~4,
+                                 scenario == "5 SSB"~5,
+                                 scenario == "6 EPOCH CCI"~6,
+                                 scenario == "7 SI SVI"~7,
+                                 scenario == "8 EPOCH CCI SI SVI"~8,
+                                 scenario == "9 EPOCH CCI SI SVI SSB"~9),
+                       levels=c(1:9),
+                       labels = c("EPOCH", "CCI", "SI", "SVI", "SSB", "EPOCH+CCI",
+                                  "SI+SVI",  "EPOCH+CCI+SI+SVI", "EPOCH+CCI+SI+SVI+SSB"))) %>% 
+left_join(., det_bmi_df_wide %>% select(-run),
+          by=c("scenario","bmi.output","age.groups.output","gender.output"))
+
+lsa_int_si_df<-lsa_int_si_df %>% 
+  mutate(scenario=factor(case_when(scenario == "1 EPOCH"~1,
+                                 scenario == "2 CCI"~2,
+                                 scenario == "3 SI"~3,
+                                 scenario == "4 SVI"~4,
+                                 scenario == "5 SSB"~5,
+                                 scenario == "6 EPOCH CCI"~6,
+                                 scenario == "7 SI SVI"~7,
+                                 scenario == "8 EPOCH CCI SI SVI"~8,
+                                 scenario == "9 EPOCH CCI SI SVI SSB"~9),
+                       levels=c(1:9),
+                       labels = c("EPOCH", "CCI", "SI", "SVI", "SSB", "EPOCH+CCI",
+                                  "SI+SVI",  "EPOCH+CCI+SI+SVI", "EPOCH+CCI+SI+SVI+SSB"))) %>% 
+left_join(., det_bmi_df_wide %>% select(-run),
+          by=c("scenario","bmi.output","age.groups.output","gender.output"))
+
+lsa_int_svi_df<-lsa_int_svi_df %>% 
+  mutate(scenario=factor(case_when(scenario == "1 EPOCH"~1,
+                                 scenario == "2 CCI"~2,
+                                 scenario == "3 SI"~3,
+                                 scenario == "4 SVI"~4,
+                                 scenario == "5 SSB"~5,
+                                 scenario == "6 EPOCH CCI"~6,
+                                 scenario == "7 SI SVI"~7,
+                                 scenario == "8 EPOCH CCI SI SVI"~8,
+                                 scenario == "9 EPOCH CCI SI SVI SSB"~9),
+                       levels=c(1:9),
+                       labels = c("EPOCH", "CCI", "SI", "SVI", "SSB", "EPOCH+CCI",
+                                  "SI+SVI",  "EPOCH+CCI+SI+SVI", "EPOCH+CCI+SI+SVI+SSB"))) %>% 
+left_join(., det_bmi_df_wide %>% select(-run),
+          by=c("scenario","bmi.output","age.groups.output","gender.output"))
+
+lsa_int_ssb_df<-lsa_int_ssb_df %>% 
+  mutate(scenario=factor(case_when(scenario == "1 EPOCH"~1,
+                                 scenario == "2 CCI"~2,
+                                 scenario == "3 SI"~3,
+                                 scenario == "4 SVI"~4,
+                                 scenario == "5 SSB"~5,
+                                 scenario == "6 EPOCH CCI"~6,
+                                 scenario == "7 SI SVI"~7,
+                                 scenario == "8 EPOCH CCI SI SVI"~8,
+                                 scenario == "9 EPOCH CCI SI SVI SSB"~9),
+                       levels=c(1:9),
+                       labels = c("EPOCH", "CCI", "SI", "SVI", "SSB", "EPOCH+CCI",
+                                  "SI+SVI",  "EPOCH+CCI+SI+SVI", "EPOCH+CCI+SI+SVI+SSB"))) %>% 
+left_join(., det_bmi_df_wide %>% select(-run),
+          by=c("scenario","bmi.output","age.groups.output","gender.output"))
+
+```
+
+# Early Prevention of Obesity in Children
+
+## RCT Effects
+```{r echo=F, message=F, error=F, warning=F ,  fig.width=1*5*2.2,fig.height=1*4*2.2}
+# lsa_int_epoch_df %>% 
+#   filter(year==2057) %>% 
+#   filter(focus=="Effect BF OR") %>% 
+#   filter(gender.output=='Male') %>%
+#   filter(age.groups.output!="Age 45 49") %>% 
+#   mutate(diff.int=int.value-det.int.value) %>% 
+#   ggplot()+
+#   geom_line(aes(x=input.value, y=int.value, color="int"))+
+#   geom_line(aes(x=input.value, y=det.int.value, color="det"))+
+#   # geom_smooth(aes(x=input.value, y=diff.int, color=bmi.output), se=F, linewidth=0.5)+
+#   facet_wrap2(age.groups.output~bmi.output, scales="free")+
+#   guides(colour = guide_legend("BMI outcome"))+
+#   scale_y_continuous(labels = scales::percent)+
+#   ylab("Change in the prevalence of obesity (%)")+xlab("Assumed effect of breastfeeding (OR)")+
+#   theme_bw() +theme(legend.position = "bottom")
+```
+
+
+```{r, echo=F, message=F, error=F, warning=F,  fig.width=1*4*2.2,fig.height=1*5*2.2}
+p.tmp1<-derivative_lsa_epoch_int %>%
+  filter(focus=="Effect BF OR") %>% 
+  filter(gender.output=='Male') %>%
+  filter(age.groups.output!="Age 45 49") %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1, show.legend = F)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output), show.legend = F)+
+  scale_x_discrete(breaks=c("Age 2","Age 3 5", "Age 6 8", "Age 9 11", "Age 12 14", "Age 15 17",
+                            "Age 18 19", "Age 20 24","Age 25 29", "Age 30 34", "Age 35 39", "Age 40 44"),
+                   labels=c("2", "3-5", "6-8", "9-11","12-14","15-17","18-19", "20-24", "25-29", "30-34", "35-39","40-44"))+
+  scale_y_continuous(labels = scales::label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01, accuracy = 0.01))+
+  xlab("Age")+
+  ylab(bquote(atop("Average change in the reduction in", " obesity from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in obesity from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7),
+                   axis.title.y = element_text(size=8))+
+  # guides(colour = guide_legend())+
+  ggtitle("Assumed Intervention effect - breastfeeding", subtitle = "Units: per 0.01 OR units")
+
+p.tmp2<-lsa_int_epoch_df %>% 
+  filter(year==2057) %>% 
+  filter(focus=="Effect BF OR") %>% 
+  filter(gender.output=='Male') %>%
+  filter(age.groups.output!="Age 45 49") %>% 
+  mutate(diff.int=int.value-det.int.value) %>% 
+  ggplot()+
+  geom_smooth(aes(x=input.value, y=diff.int, color=bmi.output), se=F, linewidth=0.5)+
+  facet_wrap(vars(age.groups.output), ncol = 4, nrow=3)+
+  guides(colour = guide_legend("BMI outcome"))+
+  scale_y_continuous(labels = scales::percent)+
+  ylab("Change in the prevalence (%)")+xlab("Assumed effect of breastfeeding (OR)")+
+  theme_bw() +theme(legend.position = "bottom")
+
+layout <- '
+#AAAAA#
+BBBBBBB
+BBBBBBB
+'
+wrap_plots(A = p.tmp1, B = p.tmp2, design = layout)+
+  plot_annotation(title = 'Explaination of plots',
+                   theme = theme(plot.title = element_text(size = 16, face = c("bold")))) & 
+  theme(legend.position = "bottom")
+
+```
+
+
+```{r RCT Effects, echo=F, message=F, error=F, warning=F, fig.height=1*3*3.3, fig.width=1*2*3.3}
+derivative_lsa_epoch_int %>% 
+  filter(focus=="Effect BF OR") %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in prevalence from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   strip.text.x = element_text(size = 6),
+                   strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("Scenario"))+
+  ggtitle("Assumed Intervention effect - breastfeeding", subtitle = "Units: per 0.01 OR units")+
+  
+  derivative_lsa_epoch_int %>% 
+  filter(focus=="Effect TV OR") %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in prevalence from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   strip.text.x = element_text(size = 6),
+                   strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("Scenario"))+
+  ggtitle("Assumed Intervention effect - Screen time", subtitle = "Units: per 0.01 OR units")+
+  
+  derivative_lsa_epoch_int %>% 
+  filter(focus=="\"Effect Non-core OR\"") %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in prevalence from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   strip.text.x = element_text(size = 6),
+                   strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("Scenario"))+
+  ggtitle("Assumed Intervention effect - Non-core food consumption", subtitle = "Units: per 0.01 OR units")+
+  
+  plot_layout(ncol = 1, nrow=3, guides = "collect")+
+  plot_annotation(title = 'Intervention effect',
+                   theme = theme(plot.title = element_text(size = 16, face = c("bold")))) & 
+  theme(legend.position = "bottom")
+  
+
+```
+
+## EPOCH Scale up
+```{r EPOCH Scale up der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+ derivative_lsa_epoch_int %>% 
+  filter(focus=="EPOCH Scale up factor") %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in prevalence from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   strip.text.x = element_text(size = 6),
+                   strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("Scenario"))+
+  ggtitle("Assumed EPOCH Scale up factor", subtitle = "Units: Per 0.01 units")
+
+```
+
+
+## Percentage of infants exposed	
+```{r, echo=F, message=F, error=F, warning=F}
+# lsa_int_epoch_df %>%
+#   filter(year==2057) %>%
+#     filter(focus=="Percentage of infants exposed") %>% 
+#   select(input.value, int.value)
+```
+
+```{r Percentage of infants exposed der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_epoch_int %>% 
+  filter(focus=="Percentage of infants exposed") %>% 
+  # filter(gender.output=='Male') %>%
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  # geom_smooth(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output), se=F, linewidth=0.5)+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age group")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom")+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1))+
+  guides(colour = guide_legend("BMI"))+
+  ggtitle("Percentage of infants exposed", subtitle = "Per 0.01 units")
+```
+
+## Relapse Rate
+```{r, echo=F, message=F, error=F, warning=F}
+# lsa_int_epoch_df %>%
+#   filter(year==2057) %>%
+#   filter(focus=="Relapse Rate") %>% 
+#   select(input.value, int.value)
+```
+
+```{r  Relapse Rate, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_epoch_int %>% 
+filter(focus=="Relapse Rate") %>% 
+  # filter(gender.output=='Male') %>%
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  # geom_smooth(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output), se=F, linewidth=0.5)+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age group")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom")+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01, accuracy = 0.01))+
+  guides(colour = guide_legend("BMI"))+
+  ggtitle("Relapse Rate 2+ years old", subtitle = "Per 0.01 units")
+```
+
+## Relapse Rate EPOCH
+```{r EPOCH Relapse Rate, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_epoch_int %>% 
+  filter(focus=="Relapse Rate EPOCH") %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age group")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom")+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01, accuracy = 0.01))+
+  guides(colour = guide_legend("BMI"))+
+  ggtitle("EPOCH Relapse", subtitle = "Per 0.01 units")
+```
+
+# Childcare setting intervention
+## CCI Scale up factor
+```{r, echo=F, message=F, error=F, warning=F}
+# lsa_int_cci_df %>%
+#   filter(year==2057) %>%
+#   filter(focus=="CCI Scale up factor") %>% 
+#   select(input.value, int.value)
+```
+
+```{r Scale up der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_cci_int %>% 
+  filter(focus=="CCI Scale up factor") %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in prevalence from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   strip.text.x = element_text(size = 6),
+                   strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("Scenario"))+
+  ggtitle("Assumed CCI Scale up factor", subtitle = "Units: Per 0.01 units")
+
+```
+
+## Childcare settings intervention Change in Diet coefficients
+```{r Childcare settings intervention Change in Diet der, echo=F, message=F, error=F, warning=F, fig.height=1*2*2, fig.width=1*5*2}
+derivative_lsa_cci_int %>%
+  filter(grepl("Childcare settings intervention Change in Diet coefficients", focus)) %>% 
+  separate(focus, into=c("first","food.groups"),sep="\\[", remove = F) %>% 
+  mutate(food.groups=factor(case_when(food.groups=="Discretionary_foods]"~1,
+                                       food.groups=="Fruit]"~2,
+                                       food.groups=="NonAlcoholic_beverage]"~3,
+                                       food.groups=="Sugar_Sweetened beverage]"~4,
+                                       food.groups=="Vegetables]"~5),
+                             levels=c(1,2,3,4,5),
+                             labels=c("Discretionary foods","Fruit",
+                                     "Other beverage","Sugar Sweetened beverage", "Vegetables"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(rows =vars(gender.output), cols=vars(food.groups), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in prevalence from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   strip.text.x = element_text(size = 6),
+                   strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcomes"))+
+  ggtitle("Childcare settings intervention Change in Diet", subtitle = "RCT IRR Per 0.01 units")
+
+```
+
+## Childcare settings intervention Change in PA coefficients
+```{r Childcare settings intervention Change in PA der, echo=F, message=F, error=F, warning=F, fig.height=1*2*2.5, fig.width=1.6*2*2.5}
+derivative_lsa_cci_int %>%
+  filter(grepl("Childcare settings intervention Change in PA coefficients", focus)) %>% 
+  separate(focus, into=c("first","pa.groups"),sep="\\[", remove = F) %>% 
+  mutate(pa.groups=factor(case_when(pa.groups=="Light]"~1,
+                                       pa.groups=="Screen]"~2),
+                             levels=c(1,2),
+                             labels=c("Light physical activity","Screen time"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(rows =vars(gender.output), cols=vars(pa.groups), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  # scale_y_continuous(labels = label_scientific( scale =1,suffix = "%"))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  # ylab(bquote(atop("Average change in prevalence from intervention", "per kg increase in body weight (" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcomes"))+
+  ggtitle("Childcare settings intervention Change in PA", subtitle = "RCT IRR Per 0.01 units")
+
+```
+
+## Percentage of childcare centers participating in intervention
+```{r Percentage of childcare centers participating in intervention der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_cci_int %>% 
+  filter(grepl("Percentage of childcare centers participating in intervention", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Percentage of childcare centers participating in intervention", subtitle = "Per percentage point")
+
+```
+
+## Definition in food groups
+```{r, echo=F, message=F, error=F, warning=F, fig.height=1*2*4.2, fig.width=1*2*4.2}
+derivative_lsa_cci_int %>% 
+  filter(grepl("Proportion of Cordial in SSB", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Proportion of Cordial in SSB", subtitle = "Per 0.01")+
+  
+  derivative_lsa_cci_int %>% 
+  filter(grepl("Proportion of Packed snacks in Discretionary foods", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Proportion of Packed snacks in Discretionary foods", subtitle = "Per 0.01")+
+  
+  # plot_layout(ncol=2, nrow=1, guides = "collect")&theme(legend.position = "bottom")
+
+  plot_layout(ncol = 1, nrow=2, guides = "collect")+
+  plot_annotation(title = 'Assumed composition of intervention foods',
+                   theme = theme(plot.title = element_text(size = 16, face = c("bold")))) & 
+  theme(legend.position = "bottom")
+  
+  
+```
+
+
+# School-based settings interventions
+
+## Relapse Rate
+```{r Relapse Rate SI der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_si_int %>% 
+  filter(grepl("Relapse Rate", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Relapse rate - SI", subtitle = "Per percentage point")
+
+```
+
+
+## SI Percentage of Schools participating in intervention
+```{r SI Percentage of Schools participating in intervention der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_si_int %>% 
+  filter(grepl("SI Percentage of Schools participating in intervention", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SI Percentage of Schools participating in intervention", subtitle = "Per percentage point")
+
+```
+
+## SI percentage of total diet consumed at school
+```{r SI percentage of total diet consumed at school der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_si_int %>% 
+  filter(grepl("SI percentage of total diet consumed at school", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SI percentage of total diet consumed at school", subtitle = "Per percentage point")
+
+```
+
+## SI Scale up factor
+```{r SI Scale up factor der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_si_int %>% 
+  filter(grepl("SI Scale up factor", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SI Scale up factor", subtitle = "Per percentage point")
+
+```
+
+
+## SI % change in PA
+```{r SI change in PA der, echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_si_int %>% 
+  filter(grepl("SI % change in PA", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(col=vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SI % change in PA", subtitle = "Per percentage point")
+
+```
+
+
+## SI % Reduction In student Purchases
+```{r SI Reduction In student Purchases der, echo=F, message=F, error=F, warning=F, fig.height=1*11*2, fig.width=1.6*2*2}
+derivative_lsa_si_int %>% 
+  filter(grepl("SI % Reduction In student Purchases", focus)) %>% 
+  separate(focus, into=c("first","food.groups"),sep="\\[", remove = F) %>% 
+  mutate(food.groups=factor(case_when(food.groups=="Dairy]"~1,
+                                      food.groups=="Discretionary_foods]"~2,
+                                      food.groups=="Fats]"~3,
+                                      food.groups=="Fruit]"~4,
+                                      food.groups=="Grains]"~5,
+                                      food.groups=="Meat]"~6,
+                                      food.groups=="NonAlcoholic_beverage]"~7,
+                                      food.groups=="Other]"~8,
+                                      food.groups=="Sugar_Sweetened beverage]"~9,
+                                      food.groups=="Vegetables]"~10,
+                                      food.groups=="Water]"~11),
+                             levels=c(seq(1:11)),
+                             labels=c("Dairy","Discretionary foods","Fats","Fruit","Grains","Meat",
+                                     "Other beverage","Other","Sugar Sweetened beverage", "Vegetables", "Water"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+ facet_grid(cols =vars(gender.output), rows=vars(food.groups), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SI % Reduction In student Purchases", subtitle = "Per %")
+
+```
+
+## SI Percentage of children attending School 
+```{r SI Percentage of children attending School der, echo=F, message=F, error=F, warning=F, fig.height=1*5*1.7, fig.width=1.6*2*1.7}
+derivative_lsa_si_int %>% 
+  filter(grepl("SI Percentage of children attending School", focus)) %>% 
+  separate(focus, into=c("first","age.groups.intput"),sep="\\[", remove = F) %>% 
+  mutate( age.groups.input=factor(case_when(grepl("Age_2,",age.groups.intput)~1,
+                                              grepl("Age_3_5",age.groups.intput)~2,
+                                              grepl("Age_6_8",age.groups.intput)~3,
+                                              grepl("Age_9_11" ,age.groups.intput)~4,
+                                              grepl("Age_12_14",age.groups.intput)~5,
+                                              grepl("Age_15_17",age.groups.intput)~6,
+                                              grepl("Age_18_19",age.groups.intput)~7,
+                                              grepl("Age_20_24",age.groups.intput)~8,
+                                              grepl("Age_25_29",age.groups.intput)~9,
+                                              grepl("Age_30_34",age.groups.intput)~10,
+                                              grepl("Age_35_39",age.groups.intput)~11,
+                                              grepl("Age_40_44",age.groups.intput)~12,
+                                              grepl("Age_45_49",age.groups.intput)~13),
+                                    levels=c(seq(1:13)), 
+                                    labels=c("Age 2","Age 3 5","Age 6 8","Age 9 11","Age 12 14","Age 15 17",
+                                             "Age 18 19","Age 20 24" ,"Age 25 29","Age 30 34","Age 35 39",
+                                             "Age 40 44","Age 45 49"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+ facet_grid(cols =vars(gender.output), rows=vars(age.groups.input), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =1,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SI Percentage of children attending School", subtitle = "Per percentage point")
+
+```
+
+# Sports voucher interventions
+## % of population that Registers for vouchers
+```{r percentage of population that Registers for vouchers der, echo=F, message=F, error=F, warning=F, fig.height=1*5*2.2, fig.width=1.6*2*2.2}
+derivative_lsa_svi_int %>% 
+  filter(grepl("% of population that Registers for vouchers", focus)) %>% 
+  separate(focus, into=c("first","age.groups.intput"),sep="\\[", remove = F) %>% 
+  mutate( age.groups.input=factor(case_when(grepl("Age_2,",age.groups.intput)~1,
+                                              grepl("Age_3_5",age.groups.intput)~2,
+                                              grepl("Age_6_8",age.groups.intput)~3,
+                                              grepl("Age_9_11" ,age.groups.intput)~4,
+                                              grepl("Age_12_14",age.groups.intput)~5,
+                                              grepl("Age_15_17",age.groups.intput)~6,
+                                              grepl("Age_18_19",age.groups.intput)~7,
+                                              grepl("Age_20_24",age.groups.intput)~8,
+                                              grepl("Age_25_29",age.groups.intput)~9,
+                                              grepl("Age_30_34",age.groups.intput)~10,
+                                              grepl("Age_35_39",age.groups.intput)~11,
+                                              grepl("Age_40_44",age.groups.intput)~12,
+                                              grepl("Age_45_49",age.groups.intput)~13),
+                                    levels=c(seq(1:13)), 
+                                    labels=c("Age 2","Age 3 5","Age 6 8","Age 9 11","Age 12 14","Age 15 17",
+                                             "Age 18 19","Age 20 24" ,"Age 25 29","Age 30 34","Age 35 39",
+                                             "Age 40 44","Age 45 49"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), rows=vars(age.groups.input), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =0.01,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("% of population that Registers for vouchers", subtitle = "Per percentage points")
+
+```
+
+
+## Average Number of Hours of organised sports or activities Weekly
+```{r Average Number of Hours of organised sports or activities Weekly der, echo=F, message=F, error=F, warning=F, fig.height=1*5*1.5, fig.width=1.6*6*1.5}
+derivative_lsa_svi_int %>% 
+  filter(grepl("Average Number of Hours of organised sports or activities Weekly", focus)) %>% 
+  separate(focus, into=c("first","age.groups.input"),sep="\\[", remove = F) %>% 
+  mutate(bmi.input=factor(case_when(grepl("Underweight & Healthy weight", age.groups.input)~1,
+                                    grepl("Overweight", age.groups.input)~2,
+                                    grepl("Obese", age.groups.input)~3),
+                          levels=c(1,2,3),labels=c("Underweight & Healthy weight", "Overweight", "With obesity"))) %>% 
+  mutate(age.groups.input=factor(case_when(grepl("Age_2,",age.groups.input)~1,
+                                              grepl("Age_3_5",age.groups.input)~2,
+                                              grepl("Age_6_8",age.groups.input)~3,
+                                              grepl("Age_9_11" ,age.groups.input)~4,
+                                              grepl("Age_12_14",age.groups.input)~5,
+                                              grepl("Age_15_17",age.groups.input)~6,
+                                              grepl("Age_18_19",age.groups.input)~7,
+                                              grepl("Age_20_24",age.groups.input)~8,
+                                              grepl("Age_25_29",age.groups.input)~9,
+                                              grepl("Age_30_34",age.groups.input)~10,
+                                              grepl("Age_35_39",age.groups.input)~11,
+                                              grepl("Age_40_44",age.groups.input)~12,
+                                              grepl("Age_45_49",age.groups.input)~13),
+                                    levels=c(seq(1:13)), 
+                                    labels=c("Age 2","Age 3 5","Age 6 8","Age 9 11","Age 12 14","Age 15 17",
+                                             "Age 18 19","Age 20 24" ,"Age 25 29","Age 30 34","Age 35 39",
+                                             "Age 40 44","Age 45 49"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output,bmi.input), rows=vars(age.groups.input), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3-5", "18-19", "40-44"))+
+  scale_y_continuous(labels = label_scientific( scale =1,suffix = "%"))+
+  # scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1, accuracy = 1))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Average Number of Hours of organised sports or activities Weekly", subtitle = "Per hours")
+
+```
+
+
+## Average proportion attributed to vouchers
+```{r Average proportion attributed to vouchers der,echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1*2*4}
+derivative_lsa_svi_int %>% 
+  filter(grepl("Average proportion attributed to vouchers", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+    theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Average proportion attributed to vouchers", subtitle = "Per 0.01")
+```
+
+
+## Average MET for sports Inputs  
+```{r Average MET Calculated Inputs der,echo=F, message=F, error=F, warning=F, fig.height=1*2*4, fig.width=1*2*4}
+derivative_lsa_svi_int %>% 
+  filter(grepl("Females Average MET Calculated Inputs", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+    theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Females Average MET Calculated Inputs", subtitle = "Per 0.01 MET units")+
+  
+  derivative_lsa_svi_int %>% 
+  filter(grepl("Males Average MET Calculated Inputs", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+    theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Male Average MET Calculated Inputs", subtitle = "Per 0.01 MET units")+
+  
+  plot_layout(ncol=1, nrow = 2, guides = "collect")&theme(legend.position ="bottom")
+```
+
+## Relapse Rate
+```{r Relapse Rate SVI der,echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1*2*4}
+derivative_lsa_svi_int %>% 
+  filter(grepl("Relapse Rate", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+    theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Relapse Rate", subtitle = "per percentage point")
+```
+
+
+## SVI Scale up factor
+```{r SVI Scale up factor der,echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1*2*4}
+derivative_lsa_svi_int %>% 
+  filter(grepl("SVI Scale up factor", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt/100, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt/100, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+    theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =1))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SVI Scale up factor", subtitle = "per %")
+```
+
+## PE Cordial
+```{r PE Cordial der,echo=F, message=F, error=F, warning=F, fig.height=1*7*2, fig.width=1.5*2*2}
+derivative_lsa_ssb_int %>% 
+  filter(grepl("PE Cordial", focus)) %>% 
+  # select(focus) %>% table()
+  separate(focus, into=c("first","drink.groups"),sep="\\[", remove = F) %>% 
+  mutate(drink.groups=factor(case_when(drink.groups=="Regular Soft_Drinks]"~1,
+                                      drink.groups=="Fruit Drink]"~2,
+                                      drink.groups=="Fruit Juice]"~3,
+                                      drink.groups=="Low Fat Milk]"~4,
+                                      drink.groups=="Cordial]"~5,
+                                      drink.groups=="Tea]"~6,
+                                      drink.groups=="Water]"~7,
+                                      drink.groups=="Diet Soft Drinks]"~8,
+                                      drink.groups=="Coffee]"~9),
+                             levels=c(seq(1:9)),
+                             labels=c("Regular Soft Drinks","Fruit Drink","Fruit Juice",
+                                      "Low Fat Milk","Cordial","Tea","Water", "Diet Soft Drinks","Coffee"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), rows = vars(drink.groups), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+    theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Price elasticitiy for cordial", subtitle = "per 0.01 PE units")
+```
+
+
+## PE Fruit Drink
+```{r PE Fruit Drink der,echo=F, message=F, error=F, warning=F, fig.height=1*7*2, fig.width=1.5*2*2}
+derivative_lsa_ssb_int %>% 
+  filter(grepl("PE Fruit Drink", focus)) %>% 
+  # select(focus) %>% table()
+  separate(focus, into=c("first","drink.groups"),sep="\\[", remove = F) %>% 
+  mutate(drink.groups=factor(case_when(drink.groups=="Regular Soft_Drinks]"~1,
+                                      drink.groups=="Fruit Drink]"~2,
+                                      drink.groups=="Fruit Juice]"~3,
+                                      drink.groups=="Low Fat Milk]"~4,
+                                      drink.groups=="Cordial]"~5,
+                                      drink.groups=="Tea]"~6,
+                                      drink.groups=="Water]"~7,
+                                      drink.groups=="Diet Soft Drinks]"~8,
+                                      drink.groups=="Coffee]"~9),
+                             levels=c(seq(1:9)),
+                             labels=c("Regular Soft Drinks","Fruit Drink","Fruit Juice",
+                                      "Low Fat Milk","Cordial","Tea","Water", "Diet Soft Drinks","Coffee"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), rows = vars(drink.groups), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Price elasticitiy for fruit drink", subtitle = "per 0.01 PE units")
+```
+
+## PE Soft drink
+```{r PE Soft drink der,echo=F, message=F, error=F, warning=F, fig.height=1*3*2, fig.width=1.5*2*2}
+derivative_lsa_ssb_int %>% 
+  filter(grepl("PE Soft drink", focus)) %>% 
+  # select(focus) %>% table()
+  separate(focus, into=c("first","drink.groups"),sep="\\[", remove = F) %>% 
+  mutate(drink.groups=factor(case_when(drink.groups=="Regular Soft_Drinks]"~1,
+                                      drink.groups=="Fruit Drink]"~2,
+                                      drink.groups=="Fruit Juice]"~3,
+                                      drink.groups=="Low Fat Milk]"~4,
+                                      drink.groups=="Cordial]"~5,
+                                      drink.groups=="Tea]"~6,
+                                      drink.groups=="Water]"~7,
+                                      drink.groups=="Diet Soft Drinks]"~8,
+                                      drink.groups=="Coffee]"~9),
+                             levels=c(seq(1:9)),
+                             labels=c("Regular Soft Drinks","Fruit Drink","Fruit Juice",
+                                      "Low Fat Milk","Cordial","Tea","Water", "Diet Soft Drinks","Coffee"))) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), rows = vars(drink.groups), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+    theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Price elasticitiy for fruit drink", subtitle = "per 0.01 PE units")
+```
+
+## Relapse Rate
+```{r Relapse Rate SSB der,echo=F, message=F, error=F, warning=F, fig.height=1*1*4, fig.width=1.6*1*4}
+derivative_lsa_ssb_int %>% 
+  filter(grepl("Relapse Rate", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+  xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Relapse Rate", subtitle = "per 0.01 units")
+```
+
+## SSB Scale up factor
+```{r SSB Scale up factor der,echo=F, message=F, error=F, warning=F, fig.height=1*2*2, fig.width=1.5*2*2}
+derivative_lsa_ssb_int %>% 
+  filter(grepl("SSB Scale up factor", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+ xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("Scale up factor", subtitle = "per 0.01 units")
+```
+
+# Sugar-Sweetened Beverge Tax %
+```{r SB Tax percent der,echo=F, message=F, error=F, warning=F, fig.height=1*2*2, fig.width=1.5*2*2}
+derivative_lsa_ssb_int %>% 
+  filter(grepl("SSB Tax", focus)) %>% 
+  ggplot()+
+  geom_point(aes(x=age.groups.output, y=mean.ee.alt, color=bmi.output), size=1)+
+  geom_line(aes(x=as.numeric(age.groups.output), y=mean.ee.alt, color=bmi.output))+
+  facet_grid(cols =vars(gender.output), scale="free")+
+  scale_x_discrete(breaks=c("Age 3 5", "Age 18 19", "Age 40 44"),
+                   labels=c("3 5", "18 19", "40 44"))+
+   xlab("Age outcomes")+
+  ylab(bquote(atop("Average change in the reduction in", " prevalence from intervention(" *mu[EE]*")")))+
+  theme_bw()+theme(legend.position = "bottom",
+                   panel.spacing=unit(0, "mm"),
+                   # strip.text.x = element_text(size = 6),
+                   # strip.text.y = element_text(size = 6),
+                   axis.text.x = element_text(size=7),
+                   axis.text.y = element_text(size=7))+
+  scale_y_continuous(labels = scales::label_number(suffix = "%", scale =0.01))+
+  guides(colour = guide_legend("BMI outcome"))+
+  ggtitle("SSB Tax %", subtitle = "per 0.01")
+```
